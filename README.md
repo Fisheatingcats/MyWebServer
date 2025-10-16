@@ -1,3 +1,11 @@
+<!--
+ * @Author: NICOLA 2841208085@qq.com
+ * @Date: 2025-10-16 23:58:24
+ * @LastEditors: NICOLA 2841208085@qq.com
+ * @LastEditTime: 2025-10-17 00:27:27
+ * @FilePath: \FastAPI\README.md
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+-->
 # FastAPI 现代化后端工程
 
 这是一个基于FastAPI构建的现代化后端工程示例，包含用户认证系统和HTML登录页面。
@@ -38,6 +46,8 @@ uvicorn app.main:app --reload
 ```
 
 项目将在 http://127.0.0.1:8000 启动
+
+
 
 ## 测试账户
 
