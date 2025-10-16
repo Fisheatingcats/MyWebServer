@@ -1,0 +1,89 @@
+<!--
+ * @Author: NICOLA 2841208085@qq.com
+ * @Date: 2025-10-16 23:57:25
+ * @LastEditors: NICOLA 2841208085@qq.com
+ * @LastEditTime: 2025-10-16 23:57:27
+ * @FilePath: \FastAPI\app\templates\dashboard.html
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仪表盘 - FastAPI 后端工程</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">FastAPI 后端工程</h1>
+            <nav class="nav">
+                <ul>
+                    <li><a href="/dashboard">仪表盘</a></li>
+                    <li>欢迎, {{ username }}</li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <section class="dashboard">
+            <div class="container">
+                <h2>欢迎来到管理仪表盘</h2>
+                
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <h3>总用户数</h3>
+                        <p class="stat-value">1</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>今日访问</h3>
+                        <p class="stat-value">5</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>系统状态</h3>
+                        <p class="stat-value status-green">正常</p>
+                    </div>
+                </div>
+                
+                <div class="dashboard-content">
+                    <div class="content-card">
+                        <h3>最近活动</h3>
+                        <div class="activity-list">
+                            <div class="activity-item">
+                                <span class="activity-time">今天 10:30</span>
+                                <span class="activity-text">用户 {{ username }} 登录系统</span>
+                            </div>
+                            <div class="activity-item">
+                                <span class="activity-time">今天 09:15</span>
+                                <span class="activity-text">系统自动更新</span>
+                            </div>
+                            <div class="activity-item">
+                                <span class="activity-time">昨天 16:45</span>
+                                <span class="activity-text">用户 {{ username }} 修改了个人资料</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="content-card">
+                        <h3>系统信息</h3>
+                        <div class="system-info">
+                            <p><strong>系统版本:</strong> v1.0.0</p>
+                            <p><strong>框架:</strong> FastAPI</p>
+                            <p><strong>最后更新:</strong> 2023-06-15</p>
+                            <p><strong>服务器状态:</strong> 运行中</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2023 FastAPI 后端工程. 保留所有权利。</p>
+        </div>
+    </footer>
+</body>
+</html>
