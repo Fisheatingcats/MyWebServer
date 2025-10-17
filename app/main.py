@@ -1,3 +1,11 @@
+'''
+Author: NICOLA 2841208085@qq.com
+Date: 2025-10-16 23:56:30
+LastEditors: NICOLA 2841208085@qq.com
+LastEditTime: 2025-10-17 22:51:24
+FilePath: \FastAPI\app\main.py
+Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+'''
 from fastapi import FastAPI, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -13,7 +21,7 @@ from app.services.user_service import authenticate_user
 Base.metadata.create_all(bind=engine)
 
 # 创建FastAPI应用
-app = FastAPI(title="FastAPI 后端工程", description="现代化的FastAPI后端工程示例")
+app = FastAPI(title="ikun的后端工程", description="现代化的FastAPI后端工程示例")
 
 # 包含API路由
 app.include_router(api_router, prefix="/api/v1")
@@ -64,6 +72,7 @@ async def startup_event():
 # 主页路由
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
+    # return {"主播": "我洗澡去了"}
     return templates.TemplateResponse("index.html", {"request": request})
 
 # 登录页面路由
