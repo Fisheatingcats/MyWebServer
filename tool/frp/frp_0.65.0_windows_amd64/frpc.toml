@@ -1,0 +1,11 @@
+serverAddr = "116.162.133.120"
+serverPort = 7000
+
+[auth]
+token = "123456"
+
+[[proxies]]
+name = "web"
+type = "http"
+localPort = 8000
+customDomains = ["frp.111812.xyz"]

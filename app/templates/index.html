@@ -1,27 +1,21 @@
-<!--
- * @Author: NICOLA 2841208085@qq.com
- * @Date: 2025-10-16 23:56:48
- * @LastEditors: NICOLA 2841208085@qq.com
- * @LastEditTime: 2025-10-17 22:30:21
- * @FilePath: \FastAPI\app\templates\index.html
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
--->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ikun的后端工程</title>
+    <title>首页 - FastAPI 后端工程</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
     <header class="header">
         <div class="container">
-            <h1 class="logo">ikun的后端工程</h1>
+            <h1 class="logo">ikun的 后端工程</h1>
             <nav class="nav">
                 <ul>
                     <li><a href="/">首页</a></li>
                     <li><a href="/login">登录</a></li>
+                    <li><a href="/bluetooth">蓝牙调试</a></li>
+                    <li><a href="/api/v1/cloud">云盘</a></li>
                 </ul>
             </nav>
         </div>
@@ -30,29 +24,35 @@
     <main class="main">
         <section class="hero">
             <div class="container">
-                <h2>现代化的FastAPI后端工程</h2>
-                <p>基于FastAPI构建的高性能后端服务，包含完整的用户认证系统和现代化的前端界面。</p>
+                <h2>欢迎来到 FastAPI 后端工程项目</h2>
+                <p>这是一个现代化的后端工程示例，展示了如何使用FastAPI构建高性能的Web应用程序。项目包含了用户认证、页面渲染等功能模块。</p>
                 <div class="cta-buttons">
-                    <a href="/login" class="btn btn-primary">登录系统</a>
+                    <a href="/login" class="btn btn-primary">进入管理系统</a>
+                    <a href="/bluetooth" class="btn btn-primary">蓝牙调试工具</a>
+                    <a href="/api/v1/cloud" class="btn btn-primary">云盘服务</a>
                 </div>
             </div>
         </section>
 
         <section class="features">
             <div class="container">
-                <h3>系统特性</h3>
+                <h3>项目特点</h3>
                 <div class="feature-grid">
                     <div class="feature-item">
-                        <h4>高性能</h4>
-                        <p>基于FastAPI框架，提供异步支持和高性能的API服务。</p>
+                        <h4>FastAPI框架</h4>
+                        <p>基于FastAPI构建，具有快速、高性能的特点，支持异步编程和自动API文档生成。</p>
                     </div>
                     <div class="feature-item">
-                        <h4>现代化UI</h4>
-                        <p>采用现代设计理念，提供直观友好的用户界面。</p>
+                        <h4>用户认证</h4>
+                        <p>实现了完整的用户登录认证系统，包含密码加密和会话管理功能。</p>
                     </div>
                     <div class="feature-item">
-                        <h4>安全认证</h4>
-                        <p>实现安全的用户认证和权限管理系统。</p>
+                        <h4>模板渲染</h4>
+                        <p>使用Jinja2模板引擎，轻松渲染动态HTML页面，实现前后端数据交互。</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>云盘服务</h4>
+                        <p>新增云盘功能，可以登录后访问和管理存储在服务器上的文件。</p>
                     </div>
                 </div>
             </div>
@@ -61,7 +61,7 @@
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2023 ikun的后端工程. 保留所有权利。</p>
+            <p>&copy; 2023 FastAPI 后端工程. 保留所有权利.</p>
         </div>
     </footer>
 </body>

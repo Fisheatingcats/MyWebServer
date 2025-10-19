@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>云盘文件 - FastAPI 后端工程</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">FastAPI 后端工程</h1>
+            <nav class="nav">
+                <ul>
+                    <li><a href="/">首页</a></li>
+                    <li><a href="/dashboard">仪表盘</a></li>
+                    <li><a href="/bluetooth">蓝牙调试</a></li>
+                    <li><a href="/api/v1/cloud/logout">登出</a></li>
+                    <li>欢迎, {{ username }}</li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <section class="dashboard">
+            <div class="container">
+                <h2>云盘文件管理</h2>
+                
+                <!-- 磁盘分区选择 -->
+                <div class="content-card">
+                    <h3>磁盘分区</h3>
+                    <div class="disk-partitions">
+                        {% for partition in disk_partitions %}
+                        <button class="btn btn-secondary" onclick="setMountPath('{{ partition }}')">{{ partition }}</button>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- 设置挂载路径 -->
+                <div class="content-card">
+                    <h3>设置挂载路径</h3>
+                    <p>当前挂载路径: <strong>{{ mount_path }}</strong></p>
+                    <form action="/api/v1/cloud/set_mount_path" method="post" id="mountPathForm">
+                        <div class="form-group">
+                            <label for="mount_path">输入挂载路径:</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" id="mount_path" name="mount_path" value="{{ mount_path }}" required style="flex-grow: 1; padding: 8px;">
+                                <button type="button" class="btn btn-secondary" onclick="browseFolder()">浏览文件夹</button>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">设置挂载路径</button>
+                        </div>
+                    </form>
+                    <p><small>提示：您可以输入任意本地路径作为云盘根目录，例如 D:\ 或 C:\Users\YourName\Documents</small></p>
+                </div>
+                
+                <!-- 面包屑导航 -->
+                <div class="content-card">
+                    <div class="breadcrumb">
+                        <a href="/api/v1/cloud/files">根目录</a>
+                        {% if breadcrumbs %}
+                            {% for crumb in breadcrumbs %}
+                                > <a href="/api/v1/cloud/files?path={{ crumb.path }}">{{ crumb.name }}</a>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- 文件列表 -->
+                <div class="content-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3>文件列表</h3>
+                        <button class="btn btn-primary" onclick="showCreateFolderForm()">新建</button>
+                    </div>
+                    
+                    <!-- 创建文件夹表单（默认隐藏） -->
+                    <div id="createFolderForm" style="display: none; margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 6px;">
+                        <h4>创建文件夹</h4>
+                        <form action="/api/v1/cloud/create_folder" method="post">
+                            <input type="hidden" name="path" value="{{ current_path }}">
+                            <div class="form-group">
+                                <label for="folder_name">文件夹名称:</label>
+                                <input type="text" id="folder_name" name="folder_name" required style="width: 100%; padding: 8px; margin-bottom: 10px;">
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">创建文件夹</button>
+                                <button type="button" class="btn btn-secondary" onclick="hideCreateFolderForm()">取消</button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    {% if error %}
+                    <div class="error-message">{{ error }}</div>
+                    {% endif %}
+                    
+                    {% if parent_path is not none and current_path %}
+                    <div class="file-list">
+                        <div class="file-item">
+                            <a href="/api/v1/cloud/files?path={{ parent_path }}">返回上一级</a>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if files %}
+                    <div class="file-list">
+                        {% for file in files %}
+                        <div class="file-item">
+                            {% if file.is_dir %}
+                                <span class="file-icon">📁</span>
+                                <a href="/api/v1/cloud/files?path={{ file.path }}" class="file-name">{{ file.name }}</a>
+                                <span class="file-type">文件夹</span>
+                            {% else %}
+                                <span class="file-icon">📄</span>
+                                <span class="file-name">{{ file.name }}</span>
+                                <span class="file-size">{{ file.size }} 字节</span>
+                            {% endif %}
+                            <div class="file-actions">
+                                {% if not file.is_dir %}
+                                <a href="/api/v1/cloud/download/{{ file.path }}" class="btn btn-small">下载</a>
+                                {% endif %}
+                                <form action="/api/v1/cloud/delete/{{ file.path }}" method="post" style="display: inline;">
+                                    <button type="submit" class="btn btn-small btn-danger" onclick="return confirm('确定要删除 {{ file.name }} 吗?')">删除</button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p>此目录为空</p>
+                    {% endif %}
+                </div>
+                
+                <!-- 操作说明 -->
+                <div class="content-card">
+                    <h3>操作说明</h3>
+                    <div class="system-info">
+                        <p>欢迎使用云盘服务！</p>
+                        <p>您可以在这里管理您的文件和文件夹。</p>
+                        <p>当前功能：</p>
+                        <ul>
+                            <li>选择磁盘分区（如 C:\, D:\ 等）作为挂载点</li>
+                            <li>手动输入任意路径作为挂载点</li>
+                            <li>通过文件管理器选择文件夹路径作为挂载点</li>
+                            <li>查看文件和文件夹</li>
+                            <li>创建新文件夹</li>
+                            <li>文件上传</li>
+                            <li>文件下载</li>
+                            <li>文件和文件夹删除</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2023 FastAPI 后端工程. 保留所有权利.</p>
+        </div>
+    </footer>
+    
+    <script>
+        function setMountPath(path) {
+            document.getElementById('mount_path').value = path;
+        }
+        
+        function browseFolder() {
+            // 使用Electron或类似的桌面应用框架可以实现真正的文件夹选择
+            // 在普通浏览器中，我们需要使用一种变通方法
+            const path = prompt("请输入文件夹路径:", document.getElementById('mount_path').value);
+            if (path !== null) {
+                document.getElementById('mount_path').value = path;
+            }
+        }
+        
+        function showCreateFolderForm() {
+            document.getElementById('createFolderForm').style.display = 'block';
+        }
+        
+        function hideCreateFolderForm() {
+            document.getElementById('createFolderForm').style.display = 'none';
+        }
+    </script>
+    
+    <style>
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .file-item {
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .file-icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+        
+        .file-name {
+            font-weight: 500;
+            flex-grow: 1;
+        }
+        
+        .file-type, .file-size {
+            color: #666;
+            font-size: 0.9rem;
+            margin: 0 15px;
+        }
+        
+        .file-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.9rem;
+        }
+        
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        .disk-partitions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .error-message {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .breadcrumb {
+            padding: 10px 0;
+            font-size: 1.1rem;
+        }
+        
+        .breadcrumb a {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+        
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</body>
+</html>

@@ -1,0 +1,5 @@
+bindPort = 7000
+vhostHTTPPort = 8000
+
+[auth]
+token = "123456"

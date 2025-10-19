@@ -1,11 +1,3 @@
-'''
-Author: NICOLA 2841208085@qq.com
-Date: 2025-10-16 23:56:30
-LastEditors: NICOLA 2841208085@qq.com
-LastEditTime: 2025-10-17 22:51:24
-FilePath: \FastAPI\app\main.py
-Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
-'''
 from fastapi import FastAPI, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -94,6 +86,12 @@ async def login(username: str = Form(...), password: str = Form(...), db: Sessio
 async def dashboard(request: Request):
     # 在实际应用中，这里应该有更完善的认证机制
     return templates.TemplateResponse("dashboard.html", {"request": request, "username": "admin"})
+
+# 蓝牙调试页面路由
+@app.get("/bluetooth", response_class=HTMLResponse)
+async def bluetooth_debug(request: Request):
+    # 在实际应用中，这里应该有更完善的认证机制
+    return templates.TemplateResponse("bluetooth.html", {"request": request, "username": "admin"})
 
 # 运行应用
 if __name__ == "__main__":
