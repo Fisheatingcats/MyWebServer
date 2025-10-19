@@ -7,5 +7,5 @@ token = "123456"
 [[proxies]]
 name = "web"
 type = "http"
-localPort = 8000
+localPort = 80
 customDomains = ["frp.111812.xyz"]

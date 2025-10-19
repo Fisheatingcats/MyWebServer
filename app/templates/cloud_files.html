@@ -3,8 +3,382 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>云盘文件 - FastAPI 后端工程</title>
+    <title>云盘文件管理 - FastAPI 后端工程</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        /* 云盘特定样式 */
+        .cloud-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .cloud-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #1a73e8 0%, #4285f4 100%);
+            padding: 24px 32px;
+            border-radius: 12px;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .cloud-header h2 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .cloud-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .cloud-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .cloud-card-header {
+            background-color: #f8f9fa;
+            padding: 16px 24px;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #495057;
+        }
+        
+        .cloud-card-body {
+            padding: 24px;
+        }
+        
+        /* 面包屑导航 */
+        .breadcrumb-nav {
+            background-color: #f8f9fa;
+            padding: 16px 24px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+        }
+        
+        .breadcrumb-item a {
+            color: #1a73e8;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        
+        .breadcrumb-item a:hover {
+            color: #4285f4;
+            text-decoration: underline;
+        }
+        
+        .breadcrumb-separator {
+            color: #6c757d;
+        }
+        
+        .breadcrumb-item.active {
+            color: #495057;
+            font-weight: 500;
+        }
+        
+        /* 文件列表样式 */
+        .file-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            background-color: #e9ecef;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 24px;
+        }
+        
+        .file-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+            position: relative;
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .file-card:hover {
+            background: #e9ecef;
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .file-card-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+        
+        .file-card-name {
+            font-weight: 500;
+            margin-bottom: 8px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .file-card-meta {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        
+        .file-card-actions {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        
+        .file-card:hover .file-card-actions {
+            opacity: 1;
+        }
+        
+        .action-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 1);
+        }
+        
+        .delete-btn {
+            color: #dc3545;
+        }
+        
+        .delete-btn:hover {
+            background-color: #ffebee;
+        }
+        
+        /* 文件上传区域 */
+        .upload-area {
+            border: 2px dashed #1a73e8;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            margin: 24px 0;
+            transition: all 0.2s ease;
+            background-color: #f8f9fa;
+        }
+        
+        .upload-area:hover {
+            background-color: #e3f2fd;
+            border-color: #4285f4;
+        }
+        
+        .upload-area input[type="file"] {
+            display: none;
+        }
+        
+        .upload-btn {
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+        
+        .upload-btn:hover {
+            background-color: #4285f4;
+        }
+        
+        /* 挂载路径设置 */
+        .mount-path-section {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        
+        .path-input-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .path-input {
+            flex-grow: 1;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        
+        .path-input:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.25);
+        }
+        
+        /* 磁盘分区选择 */
+        .partition-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 16px 0;
+        }
+        
+        .partition-btn {
+            background-color: #e9ecef;
+            border: 1px solid #dee2e6;
+            color: #495057;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+        
+        .partition-btn:hover {
+            background-color: #1a73e8;
+            color: white;
+            border-color: #1a73e8;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .cloud-header {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+            
+            .action-buttons {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .file-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 16px;
+                padding: 16px;
+            }
+            
+            .path-input-group {
+                flex-direction: column;
+            }
+            
+            .path-input {
+                width: 100%;
+            }
+        }
+        
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        
+        .empty-state-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #495057;
+        }
+        
+        /* 模态框样式 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            margin: 0;
+            font-size: 1.2rem;
+            color: #495057;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6c757d;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+    </style>
 </head>
 <body>
     <header class="header">
@@ -15,6 +389,7 @@
                     <li><a href="/">首页</a></li>
                     <li><a href="/dashboard">仪表盘</a></li>
                     <li><a href="/bluetooth">蓝牙调试</a></li>
+                    <li><a href="/device_console">设备控制台</a></li>
                     <li><a href="/api/v1/cloud/logout">登出</a></li>
                     <li>欢迎, {{ username }}</li>
                 </ul>
@@ -23,136 +398,159 @@
     </header>
 
     <main class="main">
-        <section class="dashboard">
-            <div class="container">
-                <h2>云盘文件管理</h2>
-                
-                <!-- 磁盘分区选择 -->
-                <div class="content-card">
-                    <h3>磁盘分区</h3>
-                    <div class="disk-partitions">
-                        {% for partition in disk_partitions %}
-                        <button class="btn btn-secondary" onclick="setMountPath('{{ partition }}')">{{ partition }}</button>
-                        {% endfor %}
+        <div class="container">
+            <div class="cloud-container">
+                <!-- 页面标题和操作按钮 -->
+                <div class="cloud-header">
+                    <h2>云盘文件管理</h2>
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" onclick="showCreateFolderForm()">新建文件夹</button>
+                        <button class="btn btn-primary" onclick="document.getElementById('fileUpload').click()">上传文件</button>
                     </div>
                 </div>
                 
-                <!-- 设置挂载路径 -->
-                <div class="content-card">
-                    <h3>设置挂载路径</h3>
-                    <p>当前挂载路径: <strong>{{ mount_path }}</strong></p>
-                    <form action="/api/v1/cloud/set_mount_path" method="post" id="mountPathForm">
-                        <div class="form-group">
-                            <label for="mount_path">输入挂载路径:</label>
-                            <div style="display: flex; gap: 10px;">
-                                <input type="text" id="mount_path" name="mount_path" value="{{ mount_path }}" required style="flex-grow: 1; padding: 8px;">
-                                <button type="button" class="btn btn-secondary" onclick="browseFolder()">浏览文件夹</button>
+                <!-- 挂载路径设置 -->
+                <div class="cloud-card">
+                    <div class="cloud-card-header">挂载路径设置</div>
+                    <div class="cloud-card-body">
+                        <div class="mount-path-section">
+                            <p>当前挂载路径: <strong>{{ mount_path }}</strong></p>
+                            
+                            <!-- 磁盘分区选择 -->
+                            <div>
+                                <h4 style="margin-bottom: 12px; font-size: 1.1rem; color: #495057;">选择磁盘分区:</h4>
+                                <div class="partition-buttons">
+                                    {% for partition in disk_partitions %}
+                                    <button class="partition-btn" onclick="setMountPath('{{ partition.replace("\\", "\\\\") }}')">{{ partition }}</button>
+                                    {% endfor %}
+                                </div>
                             </div>
+                            
+                            <!-- 手动设置路径 -->
+                            <form action="/api/v1/cloud/set_mount_path" method="post" id="mountPathForm">
+                                <div class="path-input-group">
+                                    <input type="text" id="mount_path" name="mount_path" value="{{ mount_path }}" required class="path-input">
+                                    <button type="button" class="btn btn-secondary" onclick="browseFolder()">浏览</button>
+                                    <button type="submit" class="btn btn-primary">设置路径</button>
+                                </div>
+                            </form>
+                            <p style="margin-top: 8px; font-size: 0.9rem; color: #6c757d;">提示：您可以输入任意本地路径作为云盘根目录，例如 D:\ 或 C:\Users\YourName\Documents</p>
                         </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">设置挂载路径</button>
-                        </div>
-                    </form>
-                    <p><small>提示：您可以输入任意本地路径作为云盘根目录，例如 D:\ 或 C:\Users\YourName\Documents</small></p>
+                    </div>
                 </div>
                 
                 <!-- 面包屑导航 -->
-                <div class="content-card">
+                <nav class="breadcrumb-nav">
                     <div class="breadcrumb">
-                        <a href="/api/v1/cloud/files">根目录</a>
+                        <span class="breadcrumb-item">
+                            <a href="/api/v1/cloud/files">{{ mount_path.replace('\\', '\\\\') }}</a>
+                        </span>
                         {% if breadcrumbs %}
                             {% for crumb in breadcrumbs %}
-                                > <a href="/api/v1/cloud/files?path={{ crumb.path }}">{{ crumb.name }}</a>
+                            <span class="breadcrumb-separator">/</span>
+                            <span class="breadcrumb-item">
+                                <a href="/api/v1/cloud/files?path={{ crumb.path }}">{{ crumb.name }}</a>
+                            </span>
                             {% endfor %}
                         {% endif %}
                     </div>
+                </nav>
+                
+                <!-- 文件上传区域 -->
+                <div class="upload-area" onclick="document.getElementById('fileUpload').click()">
+                    <input type="file" id="fileUpload" name="files" multiple onchange="handleFileUpload(this.files)">
+                    <div style="font-size: 2.5rem; margin-bottom: 16px;">📁</div>
+                    <h3 style="margin-bottom: 8px;">拖拽文件到此处或点击上传</h3>
+                    <p style="color: #6c757d;">支持多个文件同时上传</p>
+                    <button class="upload-btn" style="margin-top: 16px;">选择文件</button>
                 </div>
                 
                 <!-- 文件列表 -->
-                <div class="content-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h3>文件列表</h3>
-                        <button class="btn btn-primary" onclick="showCreateFolderForm()">新建</button>
-                    </div>
-                    
-                    <!-- 创建文件夹表单（默认隐藏） -->
-                    <div id="createFolderForm" style="display: none; margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 6px;">
-                        <h4>创建文件夹</h4>
-                        <form action="/api/v1/cloud/create_folder" method="post">
-                            <input type="hidden" name="path" value="{{ current_path }}">
-                            <div class="form-group">
-                                <label for="folder_name">文件夹名称:</label>
-                                <input type="text" id="folder_name" name="folder_name" required style="width: 100%; padding: 8px; margin-bottom: 10px;">
-                            </div>
-                            <div class="form-actions">
-                                <button type="submit" class="btn btn-primary">创建文件夹</button>
-                                <button type="button" class="btn btn-secondary" onclick="hideCreateFolderForm()">取消</button>
-                            </div>
-                        </form>
+                <div class="cloud-card">
+                    <div class="file-list-header">
+                        <span>文件和文件夹</span>
+                        <button class="btn btn-primary" onclick="showCreateFolderForm()" style="padding: 6px 12px; font-size: 0.9rem;">新建</button>
                     </div>
                     
                     {% if error %}
-                    <div class="error-message">{{ error }}</div>
+                    <div class="error-message" style="margin: 24px;">{{ error }}</div>
                     {% endif %}
                     
+                    <!-- 返回上一级按钮 - 移到文件列表条件之外，确保空目录也显示 -->
                     {% if parent_path is not none and current_path %}
-                    <div class="file-list">
-                        <div class="file-item">
-                            <a href="/api/v1/cloud/files?path={{ parent_path }}">返回上一级</a>
+                    <div class="file-grid" id="fileGrid" style="margin-bottom: 24px;">
+                        <div class="file-card" onclick="loadFolderContent('{{ parent_path }}')">
+                            <div class="file-card-icon">📁</div>
+                            <div class="file-card-name">返回上一级</div>
+                            <div class="file-card-meta">文件夹</div>
+                            <div class="file-card-actions">
+                                <button class="action-btn" onclick="event.stopPropagation(); loadFolderContent('{{ parent_path }}')">打开</button>
+                            </div>
                         </div>
                     </div>
                     {% endif %}
                     
+                    <!-- 文件列表 -->
                     {% if files %}
-                    <div class="file-list">
+                    <div class="file-grid" id="fileGrid">
+                        <!-- 文件和文件夹列表 -->
                         {% for file in files %}
-                        <div class="file-item">
+                        <div class="file-card" onclick="loadFolderContent('{{ file.path }}')">
                             {% if file.is_dir %}
-                                <span class="file-icon">📁</span>
-                                <a href="/api/v1/cloud/files?path={{ file.path }}" class="file-name">{{ file.name }}</a>
-                                <span class="file-type">文件夹</span>
-                            {% else %}
-                                <span class="file-icon">📄</span>
-                                <span class="file-name">{{ file.name }}</span>
-                                <span class="file-size">{{ file.size }} 字节</span>
-                            {% endif %}
-                            <div class="file-actions">
-                                {% if not file.is_dir %}
-                                <a href="/api/v1/cloud/download/{{ file.path }}" class="btn btn-small">下载</a>
-                                {% endif %}
-                                <form action="/api/v1/cloud/delete/{{ file.path }}" method="post" style="display: inline;">
-                                    <button type="submit" class="btn btn-small btn-danger" onclick="return confirm('确定要删除 {{ file.name }} 吗?')">删除</button>
+                            <div class="file-card-icon">📁</div>
+                            <div class="file-card-name">{{ file.name }}</div>
+                            <div class="file-card-meta">文件夹</div>
+                            <div class="file-card-actions">
+                                <button class="action-btn" onclick="event.stopPropagation(); loadFolderContent('{{ file.path }}')">打开</button>
+                                <form action="/api/v1/cloud/delete/{{ file.path }}" method="post" style="display: inline;" onclick="event.stopPropagation();">
+                                    <button type="submit" class="action-btn delete-btn" onclick="return confirm('确定要删除 {{ file.name }} 吗?')">删除</button>
                                 </form>
                             </div>
+                            {% else %}
+                            <!-- 根据文件类型显示不同图标 -->
+                            {% if file.name.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp')) %}
+                            <div class="file-card-icon">🖼️</div>
+                            {% elif file.name.lower().endswith(('.doc', '.docx')) %}
+                            <div class="file-card-icon">📝</div>
+                            {% elif file.name.lower().endswith(('.pdf')) %}
+                            <div class="file-card-icon">📄</div>
+                            {% elif file.name.lower().endswith(('.xlsx', '.xls', '.csv')) %}
+                            <div class="file-card-icon">📊</div>
+                            {% elif file.name.lower().endswith(('.ppt', '.pptx')) %}
+                            <div class="file-card-icon">📑</div>
+                            {% elif file.name.lower().endswith(('.zip', '.rar', '.7z', '.tar', '.gz')) %}
+                            <div class="file-card-icon">🗜️</div>
+                            {% elif file.name.lower().endswith(('.mp3', '.wav', '.flac', '.ogg')) %}
+                            <div class="file-card-icon">🎵</div>
+                            {% elif file.name.lower().endswith(('.mp4', '.avi', '.mov', '.mkv')) %}
+                            <div class="file-card-icon">🎬</div>
+                            {% elif file.name.lower().endswith(('.txt', '.md', '.rtf')) %}
+                            <div class="file-card-icon">📄</div>
+                            {% else %}
+                            <div class="file-card-icon">📄</div>
+                            {% endif %}
+                            <div class="file-card-name">{{ file.name }}</div>
+                            <div class="file-card-meta">{{ file.size }} 字节</div>
+                            <div class="file-card-actions">
+                                <a href="/api/v1/cloud/download/{{ file.path | urlencode }}" class="action-btn">下载</a>
+                                <form action="/api/v1/cloud/delete/{{ file.path }}" method="post" style="display: inline;">
+                                    <button type="submit" class="action-btn delete-btn" onclick="return confirm('确定要删除 {{ file.name }} 吗?')">删除</button>
+                                </form>
+                            </div>
+                            {% endif %}
                         </div>
                         {% endfor %}
                     </div>
                     {% else %}
-                    <p>此目录为空</p>
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📁</div>
+                        <h3>此目录为空</h3>
+                        <p>点击上方"上传文件"或"新建文件夹"开始添加内容</p>
+                    </div>
                     {% endif %}
                 </div>
-                
-                <!-- 操作说明 -->
-                <div class="content-card">
-                    <h3>操作说明</h3>
-                    <div class="system-info">
-                        <p>欢迎使用云盘服务！</p>
-                        <p>您可以在这里管理您的文件和文件夹。</p>
-                        <p>当前功能：</p>
-                        <ul>
-                            <li>选择磁盘分区（如 C:\, D:\ 等）作为挂载点</li>
-                            <li>手动输入任意路径作为挂载点</li>
-                            <li>通过文件管理器选择文件夹路径作为挂载点</li>
-                            <li>查看文件和文件夹</li>
-                            <li>创建新文件夹</li>
-                            <li>文件上传</li>
-                            <li>文件下载</li>
-                            <li>文件和文件夹删除</li>
-                        </ul>
-                    </div>
-                </div>
             </div>
-        </section>
+        </div>
     </main>
 
     <footer class="footer">
@@ -161,122 +559,204 @@
         </div>
     </footer>
     
+    <!-- 创建文件夹模态框 -->
+    <div class="modal-overlay" id="createFolderModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">创建新文件夹</h3>
+                <button class="modal-close" onclick="hideCreateFolderForm()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form action="/api/v1/cloud/create_folder" method="post">
+                    <input type="hidden" name="path" value="{{ current_path }}">
+                    <div class="form-group">
+                        <label for="folder_name">文件夹名称:</label>
+                        <input type="text" id="folder_name" name="folder_name" required class="path-input">
+                    </div>
+                    <div class="modal-footer" style="border-top: none; margin-top: 20px;">
+                        <button type="submit" class="btn btn-primary">创建</button>
+                        <button type="button" class="btn btn-secondary" onclick="hideCreateFolderForm()">取消</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 上传进度模态框 -->
+    <div class="modal-overlay" id="uploadProgressModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">文件上传中...</h3>
+            </div>
+            <div class="modal-body">
+                <div id="uploadProgressBar" style="width: 100%; height: 20px; background-color: #e9ecef; border-radius: 10px; overflow: hidden;">
+                    <div id="uploadProgress" style="width: 0%; height: 100%; background-color: #1a73e8; transition: width 0.3s ease;"></div>
+                </div>
+                <p id="uploadStatus" style="margin-top: 16px; text-align: center; color: #6c757d;">准备上传...</p>
+            </div>
+        </div>
+    </div>
+    
     <script>
+        // 设置挂载路径
         function setMountPath(path) {
             document.getElementById('mount_path').value = path;
+            document.getElementById('mountPathForm').submit();
         }
         
+        // 浏览文件夹
         function browseFolder() {
-            // 使用Electron或类似的桌面应用框架可以实现真正的文件夹选择
-            // 在普通浏览器中，我们需要使用一种变通方法
             const path = prompt("请输入文件夹路径:", document.getElementById('mount_path').value);
             if (path !== null) {
                 document.getElementById('mount_path').value = path;
             }
         }
         
+        // 显示创建文件夹模态框
         function showCreateFolderForm() {
-            document.getElementById('createFolderForm').style.display = 'block';
+            document.getElementById('createFolderModal').style.display = 'flex';
+            document.getElementById('folder_name').focus();
         }
         
+        // 隐藏创建文件夹模态框
         function hideCreateFolderForm() {
-            document.getElementById('createFolderForm').style.display = 'none';
+            document.getElementById('createFolderModal').style.display = 'none';
         }
+        
+        // 异步加载文件夹内容
+        function loadFolderContent(path) {
+            // 显示加载状态
+            const fileGrid = document.getElementById('fileGrid');
+            if (!fileGrid) {
+                console.error('找不到文件网格容器');
+                return;
+            }
+            
+            fileGrid.innerHTML = '<div style="text-align: center; padding: 20px;">加载中...</div>';
+            
+            // 添加URL参数到历史记录
+            const url = new URL(window.location.href);
+            url.searchParams.set('path', path);
+            window.history.pushState({}, '', url);
+            
+            // 发送AJAX请求
+            fetch(`/api/v1/cloud/files?path=${encodeURIComponent(path)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        console.error('HTTP响应错误:', response.status);
+                        throw new Error('HTTP响应错误');
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    console.log('收到HTML响应，长度:', html.length);
+                    
+                    // 直接刷新整个页面（作为更可靠的备选方案）
+                    // 这样可以确保所有元素都正确初始化
+                    window.location.search = `path=${encodeURIComponent(path)}`;
+                })
+                .catch(error => {
+                    console.error('加载文件夹失败:', error);
+                    fileGrid.innerHTML = `<div style="text-align: center; padding: 20px; color: red;">加载失败: ${error.message}</div>`;
+                    // 如果异步加载失败，可以提供一个重试按钮
+                    fileGrid.innerHTML += '<div style="text-align: center; margin-top: 10px;"><button onclick="location.reload()" class="btn btn-secondary">重试</button></div>';
+                });
+        }
+        
+        // 处理文件上传
+        function handleFileUpload(files) {
+            if (files.length === 0) return;
+            
+            // 显示上传进度模态框
+            const progressModal = document.getElementById('uploadProgressModal');
+            const progressBar = document.getElementById('uploadProgress');
+            const statusText = document.getElementById('uploadStatus');
+            progressModal.style.display = 'flex';
+            
+            // 重置进度条
+            progressBar.style.width = '0%';
+            statusText.textContent = `正在上传 ${files.length} 个文件...`;
+            
+            // 获取当前路径
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentPath = urlParams.get('path') || '';
+            
+            // 创建FormData对象
+            const formData = new FormData();
+            formData.append('path', currentPath);
+            
+            // 添加所有文件
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
+            
+            // 创建XMLHttpRequest对象以支持进度跟踪
+            const xhr = new XMLHttpRequest();
+            
+            // 监听上传进度
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percentComplete = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = `${percentComplete}%`;
+                    statusText.textContent = `正在上传 ${files.length} 个文件... ${percentComplete}%`;
+                }
+            });
+            
+            // 处理上传完成
+            xhr.addEventListener('load', () => {
+                statusText.textContent = '上传完成，正在刷新...';
+                progressBar.style.width = '100%';
+                
+                // 上传完成后刷新页面
+                setTimeout(() => {
+                    progressModal.style.display = 'none';
+                    location.reload();
+                }, 1000);
+            });
+            
+            // 处理上传错误
+            xhr.addEventListener('error', () => {
+                statusText.textContent = '上传失败，请重试';
+                progressBar.style.backgroundColor = '#dc3545';
+                
+                // 3秒后关闭模态框
+                setTimeout(() => {
+                    progressModal.style.display = 'none';
+                }, 3000);
+            });
+            
+            // 发送请求到后端上传接口
+            xhr.open('POST', '/api/v1/cloud/upload');
+            xhr.send(formData);
+        }
+        
+        // 拖拽上传支持
+        const uploadArea = document.querySelector('.upload-area');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.backgroundColor = '#e3f2fd';
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.backgroundColor = '#f8f9fa';
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.backgroundColor = '#f8f9fa';
+            
+            if (e.dataTransfer.files.length) {
+                handleFileUpload(e.dataTransfer.files);
+            }
+        });
+        
+        // 点击模态框背景关闭
+        document.getElementById('createFolderModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('createFolderModal')) {
+                hideCreateFolderForm();
+            }
+        });
     </script>
-    
-    <style>
-        .file-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .file-item {
-            padding: 15px;
-            background-color: #f5f5f5;
-            border-radius: 6px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .file-icon {
-            margin-right: 10px;
-            font-size: 1.2em;
-        }
-        
-        .file-name {
-            font-weight: 500;
-            flex-grow: 1;
-        }
-        
-        .file-type, .file-size {
-            color: #666;
-            font-size: 0.9rem;
-            margin: 0 15px;
-        }
-        
-        .file-actions {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .btn-small {
-            padding: 6px 12px;
-            font-size: 0.9rem;
-        }
-        
-        .btn-danger {
-            background-color: #dc3545;
-            color: white;
-        }
-        
-        .btn-danger:hover {
-            background-color: #c82333;
-        }
-        
-        .btn-secondary {
-            background-color: #6c757d;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            margin: 5px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        
-        .btn-secondary:hover {
-            background-color: #5a6268;
-        }
-        
-        .disk-partitions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
-        .error-message {
-            background-color: #ffebee;
-            color: #c62828;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            font-size: 0.9rem;
-        }
-        
-        .breadcrumb {
-            padding: 10px 0;
-            font-size: 1.1rem;
-        }
-        
-        .breadcrumb a {
-            color: #1a73e8;
-            text-decoration: none;
-        }
-        
-        .breadcrumb a:hover {
-            text-decoration: underline;
-        }
-    </style>
 </body>
 </html>

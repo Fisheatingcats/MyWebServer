@@ -10,6 +10,7 @@ import platform
 import json
 from urllib.parse import unquote, quote
 
+# 直接从user_service导入authenticate_user函数
 from app.services.user_service import authenticate_user
 from app.database.database import get_db
 
@@ -111,15 +112,26 @@ async def list_files(request: Request, path: str = "", cloud_user: str = Cookie(
     try:
         # 获取当前目录下的所有文件和文件夹
         items = []
+        # 系统保留文件/文件夹列表，需要过滤
+        system_reserved = ['$RECYCLE.BIN', 'System Volume Information', 'pagefile.sys', 'hiberfil.sys', 'swapfile.sys']
+        
         for item in full_path.iterdir():
-            stat = item.stat()
-            items.append({
-                "name": item.name,
-                "is_dir": item.is_dir(),
-                "size": stat.st_size if item.is_file() else None,
-                "modified": stat.st_mtime,
-                "path": str(item.relative_to(mount_path)).replace("\\", "/")
-            })
+            # 过滤系统保留文件
+            if item.name in system_reserved:
+                continue
+                
+            try:
+                stat = item.stat()
+                items.append({
+                    "name": item.name,
+                    "is_dir": item.is_dir(),
+                    "size": stat.st_size if item.is_file() else None,
+                    "modified": stat.st_mtime,
+                    "path": str(item.relative_to(mount_path)).replace("\\", "/")
+                })
+            except (PermissionError, OSError):
+                # 跳过无权限访问的文件
+                continue
         
         # 按名称排序，文件夹在前
         items.sort(key=lambda x: (not x["is_dir"], x["name"].lower()))
@@ -204,12 +216,12 @@ async def cloud_logout():
 @router.post("/upload")
 async def upload_file(
     request: Request, 
-    file: UploadFile = File(...), 
+    files: list[UploadFile] = File(...), 
     path: str = Form(""), 
     cloud_user: str = Cookie(None)
 ):
     """
-    上传文件
+    上传文件（支持多文件）
     """
     if not cloud_user:
         return RedirectResponse(url="/api/v1/cloud/")
@@ -227,9 +239,9 @@ async def upload_file(
     # 检查路径是否在允许范围内
     try:
         full_path = full_path.resolve()
-        if not cloud_user in user_mount_paths:  # 只对默认路径进行限制
-            if not str(full_path).startswith(str(mount_path.resolve())):
-                raise HTTPException(status_code=403, detail="访问被拒绝")
+        # 对所有路径都进行限制，防止访问系统关键文件
+        if not str(full_path).startswith(str(mount_path.resolve())):
+            raise HTTPException(status_code=403, detail="访问被拒绝")
     except Exception:
         raise HTTPException(status_code=403, detail="访问被拒绝")
     
@@ -237,14 +249,23 @@ async def upload_file(
         # 确保目录存在
         full_path.mkdir(parents=True, exist_ok=True)
         
-        # 保存上传的文件
-        file_location = full_path / file.filename
-        with open(file_location, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        # 处理所有上传的文件
+        for file in files:
+            try:
+                # 保存上传的文件
+                file_location = full_path / file.filename
+                with open(file_location, "wb") as buffer:
+                    shutil.copyfileobj(file.file, buffer)
+            except Exception as e:
+                # 记录单个文件上传失败，但继续处理其他文件
+                print(f"文件 {file.filename} 上传失败: {str(e)}")
+            finally:
+                await file.close()  # 使用await关闭文件
+    except (PermissionError, OSError) as e:
+        # 处理权限错误和其他系统错误
+        return RedirectResponse(url=f"/api/v1/cloud/files?path={quote(decoded_path)}&error=文件上传失败：权限不足或系统限制", status_code=303)
     except Exception as e:
-        return RedirectResponse(url=f"/api/v1/cloud/files?path={quote(decoded_path)}", status_code=303)
-    finally:
-        file.file.close()
+        return RedirectResponse(url=f"/api/v1/cloud/files?path={quote(decoded_path)}&error=文件上传失败", status_code=303)
     
     # 重新加载文件列表
     return RedirectResponse(url=f"/api/v1/cloud/files?path={quote(decoded_path)}", status_code=303)
@@ -279,8 +300,18 @@ async def download_file(file_path: str, cloud_user: str = Cookie(None)):
     if not full_path.exists() or full_path.is_dir():
         raise HTTPException(status_code=404, detail="文件未找到")
     
+    # 检查是否为系统保留文件
+    system_reserved = ['pagefile.sys', 'hiberfil.sys', 'swapfile.sys']
+    if full_path.name in system_reserved:
+        raise HTTPException(status_code=403, detail="无法下载系统保留文件")
+    
     filename = full_path.name
-    return FileResponse(path=full_path, filename=filename)
+    try:
+        return FileResponse(path=full_path, filename=filename)
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="没有权限访问此文件")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="文件下载失败")
 
 @router.post("/delete/{file_path:path}")
 async def delete_file(request: Request, file_path: str, cloud_user: str = Cookie(None)):
@@ -315,12 +346,21 @@ async def delete_file(request: Request, file_path: str, cloud_user: str = Cookie
     
     try:
         if full_path.exists():
+            # 检查是否为系统保留文件/文件夹
+            system_reserved = ['$RECYCLE.BIN', 'System Volume Information', 'pagefile.sys', 'hiberfil.sys', 'swapfile.sys']
+            if full_path.name in system_reserved:
+                return RedirectResponse(url=f"/api/v1/cloud/files?path={quote(redirect_path)}&error=无法删除系统保留文件或文件夹", status_code=303)
+                
             if full_path.is_file():
                 full_path.unlink()
             else:
                 shutil.rmtree(full_path)
+    except PermissionError:
+        return RedirectResponse(url=f"/api/v1/cloud/files?path={quote(redirect_path)}&error=删除失败：权限不足", status_code=303)
+    except OSError as e:
+        return RedirectResponse(url=f"/api/v1/cloud/files?path={quote(redirect_path)}&error=删除失败：系统限制", status_code=303)
     except Exception as e:
-        pass  # 简单处理错误，实际项目中应该记录日志并显示错误信息
+        return RedirectResponse(url=f"/api/v1/cloud/files?path={quote(redirect_path)}&error=删除失败", status_code=303)
     
     # 重新加载文件列表
     return RedirectResponse(
@@ -364,8 +404,12 @@ async def create_folder(
         # 创建新文件夹
         new_folder_path = full_path / folder_name
         new_folder_path.mkdir(exist_ok=True)
+    except PermissionError:
+        return RedirectResponse(url=f"/api/v1/cloud/files?path={quote(decoded_path)}&error=创建文件夹失败：权限不足", status_code=303)
+    except OSError as e:
+        return RedirectResponse(url=f"/api/v1/cloud/files?path={quote(decoded_path)}&error=创建文件夹失败：系统限制", status_code=303)
     except Exception as e:
-        pass  # 简单处理错误，实际项目中应该记录日志并显示错误信息
+        return RedirectResponse(url=f"/api/v1/cloud/files?path={quote(decoded_path)}&error=创建文件夹失败", status_code=303)
     
     # 重新加载文件列表
     return RedirectResponse(url=f"/api/v1/cloud/files?path={quote(decoded_path)}", status_code=303)

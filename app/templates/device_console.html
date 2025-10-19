@@ -1,0 +1,1704 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设备控制台 - IOT 云控系统</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        /* 全局样式调整 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        /* 主容器布局 */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* 左侧菜单栏 */
+        .sidebar {
+            width: 260px;
+            background-color: #2c3e50;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-header h2 {
+            font-size: 1.4rem;
+            margin: 0;
+            color: #ecf0f1;
+        }
+        
+        .sidebar-nav {
+            flex: 1;
+            padding: 20px 0;
+        }
+        
+        .sidebar-nav ul {
+            list-style: none;
+        }
+        
+        .sidebar-nav li {
+            margin-bottom: 5px;
+        }
+        
+        .sidebar-nav a {
+            display: block;
+            padding: 12px 20px;
+            color: #bdc3c7;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        
+        .sidebar-nav a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #ecf0f1;
+        }
+        
+        .sidebar-nav a.active {
+            background-color: #1a73e8;
+            color: white;
+            border-left-color: #1976d2;
+        }
+        
+        .sidebar-nav .icon {
+            margin-right: 10px;
+            display: inline-block;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .sidebar-footer {
+            padding: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            color: #95a5a6;
+            font-size: 0.9rem;
+        }
+        
+        /* 主内容区域 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+        
+        /* 顶部导航栏 */
+        .header {
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+        
+        .nav ul {
+            display: flex;
+            list-style: none;
+            gap: 15px;
+        }
+        
+        .nav a {
+            text-decoration: none;
+            color: #555;
+            padding: 8px 15px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav a:hover {
+            background-color: #f8f9fa;
+            color: #1a73e8;
+        }
+        
+        .nav a.active {
+            background-color: #1a73e8;
+            color: white;
+        }
+        
+        /* 内容区域 */
+        .content {
+            flex: 1;
+            padding: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+        
+        .console-header h2 {
+            color: #2c3e50;
+            font-size: 1.8rem;
+            margin: 0;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background-color: #1a73e8;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #1557b0;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        
+        /* 设备网格 */
+        .device-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        /* 设备卡片美化 */
+        .device-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 25px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border-top: 4px solid #1a73e8;
+        }
+        
+        .device-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+        
+        .device-card.online {
+            border-top-color: #4caf50;
+        }
+        
+        .device-card.offline {
+            border-top-color: #f44336;
+            opacity: 0.8;
+        }
+        
+        .device-info h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .device-status {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        
+        .status-indicator {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            margin-right: 10px;
+            position: relative;
+        }
+        
+        .status-indicator::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+            }
+            70% {
+                transform: scale(1.2);
+                box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+            }
+        }
+        
+        .status-online {
+            background-color: #4caf50;
+        }
+        
+        .status-online::after {
+            background-color: #4caf50;
+        }
+        
+        .status-offline {
+            background-color: #f44336;
+            animation: none;
+        }
+        
+        .status-offline::after {
+            display: none;
+        }
+        
+        .device-details {
+            margin-bottom: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+        
+        .detail-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .detail-label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .detail-value {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .device-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        /* 控制按钮样式美化 */
+        .btn-control {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            flex: 1;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .btn-control:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-control:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-on {
+            background-color: #4caf50;
+            color: white;
+        }
+        
+        .btn-on:hover:not(:disabled) {
+            background-color: #3d8b40;
+        }
+        
+        .btn-off {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        .btn-warning {
+            background-color: #ff9800;
+            color: white;
+        }
+        
+        .btn-warning:hover:not(:disabled) {
+            background-color: #f57c00;
+        }
+        
+        .btn-danger {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        .btn-danger:hover:not(:disabled) {
+            background-color: #d32f2f;
+        }
+        
+        /* OTA固件上传区域 */
+        .ota-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+            margin-top: 30px;
+        }
+        
+        .ota-section h2 {
+            margin-bottom: 25px;
+            color: #2c3e50;
+            font-size: 1.5rem;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 10px;
+        }
+        
+        .ota-form {
+            max-width: 700px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.95rem;
+        }
+        
+        .form-group input[type="text"],
+        .form-group input[type="file"],
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+            background-color: #fff;
+        }
+        
+        .form-group input[type="text"]:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .ota-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 15px 0;
+        }
+        
+        .ota-options label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-weight: 500;
+            color: #495057;
+            transition: color 0.3s ease;
+        }
+        
+        .ota-options label:hover {
+            color: #1a73e8;
+        }
+        
+        .ota-options input[type="radio"] {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            accent-color: #1a73e8;
+        }
+        
+        .btn-ota {
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-ota:hover {
+            background-color: #1976d2;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+        }
+        
+        /* 新建设备模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: modalSlide 0.3s ease-out;
+        }
+        
+        @keyframes modalSlide {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .modal-header h3 {
+            color: #2c3e50;
+            font-size: 1.4rem;
+            margin: 0;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-close:hover {
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        /* 状态统计卡片 */
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+        }
+        
+        .stat-card h3 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #1a73e8;
+        }
+        
+        .stat-card p {
+            color: #666;
+            font-size: 0.95rem;
+            margin: 0;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 1000;
+                height: 100vh;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .content {
+                padding: 20px 15px;
+            }
+            
+            .console-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .device-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .device-actions {
+                flex-direction: column;
+            }
+            
+            .stats-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* 加载动画 */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1a73e8;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 左侧菜单栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>设备管理</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li>
+                        <a href="#" class="active" onclick="showSection('current-devices')">
+                            <span class="icon">📱</span> 当前设备
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" onclick="showSection('add-device')">
+                            <span class="icon">➕</span> 新建设备
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" onclick="showSection('ota-management')">
+                            <span class="icon">🔄</span> OTA管理
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" onclick="showAddDeviceTypeModal()">
+                            <span class="icon">🏷️</span> 管理设备类型
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" onclick="showSection('device-stats')">
+                            <span class="icon">📊</span> 设备统计
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <p>© 2024 IOT 云控系统</p>
+            </div>
+        </aside>
+
+        <!-- 主内容区域 -->
+        <div class="main-content">
+            <header class="header">
+                <h1 class="logo">IOT 云控系统</h1>
+                <nav class="nav">
+                    <ul>
+                        <li><a href="/">首页</a></li>
+                        <li><a href="/bluetooth">蓝牙调试</a></li>
+                        <li><a href="/api/v1/cloud">云盘</a></li>
+                        <li><a href="/device_console" class="active">设备控制台</a></li>
+                    </ul>
+                </nav>
+            </header>
+
+            <div class="content">
+                <!-- 统计卡片 -->
+                <section id="device-stats" class="section">
+                    <div class="stats-cards">
+                        <div class="stat-card">
+                            <h3>3</h3>
+                            <p>总设备数</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>2</h3>
+                            <p>在线设备</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>1</h3>
+                            <p>离线设备</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>67%</h3>
+                            <p>设备在线率</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 当前设备列表 -->
+                <section id="current-devices" class="section">
+                    <div class="console-header">
+                        <h2>设备列表</h2>
+                        <div>
+                            <button class="btn btn-primary" onclick="showAddDeviceModal()">
+                                <span class="icon">➕</span> 新建设备
+                            </button>
+                            <button class="btn btn-secondary" onclick="refreshDeviceList()" style="margin-left: 10px;">
+                                <span class="icon">🔄</span> 刷新
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 设备类型分组 - 智能网关 -->
+                    <div class="device-type-group">
+                        <div class="device-type-header" onclick="toggleDeviceTypeGroup('gateway')">
+                            <h3>
+                                <span class="icon">🏠</span> 智能网关
+                            </h3>
+                            <div class="type-stats">
+                                <span>在线: 1</span> | <span>总数: 1</span>
+                                <span class="expand-icon">▼</span>
+                            </div>
+                        </div>
+                        <div class="device-type-content" id="gateway-group">
+                            <!-- 设备卡片 -->
+                            <div class="device-card">
+                                <div class="device-header">
+                                    <h3>智能网关 001</h3>
+                                    <span class="status-indicator online"></span>
+                                </div>
+                                <div class="device-info">
+                                    <p><strong>设备ID:</strong> DEV-2024-0001</p>
+                                    <p><strong>位置:</strong> 主控室</p>
+                                    <p><strong>最后在线:</strong> 刚刚</p>
+                                    <p><strong>固件版本:</strong> V1.2.3</p>
+                                </div>
+                                <div class="device-actions">
+                                    <button class="btn-control btn-view" onclick="viewDeviceDetails('DEV-2024-0001')">查看</button>
+                                    <button class="btn-control btn-edit" onclick="editDevice('DEV-2024-0001')">编辑</button>
+                                    <button class="btn-control btn-restart" onclick="controlDevice('DEV-2024-0001', 'restart')">重启</button>
+                                    <button class="btn-control btn-ota" onclick="showOtaOptions('DEV-2024-0001')">OTA</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 设备类型分组 - 传感器节点 -->
+                    <div class="device-type-group">
+                        <div class="device-type-header" onclick="toggleDeviceTypeGroup('sensor')">
+                            <h3>
+                                <span class="icon">📊</span> 传感器节点
+                            </h3>
+                            <div class="type-stats">
+                                <span>在线: 1</span> | <span>总数: 1</span>
+                                <span class="expand-icon">▼</span>
+                            </div>
+                        </div>
+                        <div class="device-type-content" id="sensor-group">
+                            <!-- 设备卡片 -->
+                            <div class="device-card">
+                                <div class="device-header">
+                                    <h3>传感器节点 002</h3>
+                                    <span class="status-indicator online"></span>
+                                </div>
+                                <div class="device-info">
+                                    <p><strong>设备ID:</strong> DEV-2024-0002</p>
+                                    <p><strong>位置:</strong> 一楼大厅</p>
+                                    <p><strong>最后在线:</strong> 5分钟前</p>
+                                    <p><strong>固件版本:</strong> V1.1.0</p>
+                                </div>
+                                <div class="device-actions">
+                                    <button class="btn-control btn-view" onclick="viewDeviceDetails('DEV-2024-0002')">查看</button>
+                                    <button class="btn-control btn-edit" onclick="editDevice('DEV-2024-0002')">编辑</button>
+                                    <button class="btn-control btn-restart" onclick="controlDevice('DEV-2024-0002', 'restart')">重启</button>
+                                    <button class="btn-control btn-ota" onclick="showOtaOptions('DEV-2024-0002')">OTA</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 设备类型分组 - 控制器节点 -->
+                    <div class="device-type-group">
+                        <div class="device-type-header" onclick="toggleDeviceTypeGroup('controller')">
+                            <h3>
+                                <span class="icon">⚙️</span> 控制器节点
+                            </h3>
+                            <div class="type-stats">
+                                <span>在线: 0</span> | <span>总数: 1</span>
+                                <span class="expand-icon">▼</span>
+                            </div>
+                        </div>
+                        <div class="device-type-content" id="controller-group">
+                            <!-- 设备卡片 -->
+                            <div class="device-card">
+                                <div class="device-header">
+                                    <h3>控制器节点 003</h3>
+                                    <span class="status-indicator offline"></span>
+                                </div>
+                                <div class="device-info">
+                                    <p><strong>设备ID:</strong> DEV-2024-0003</p>
+                                    <p><strong>位置:</strong> 二楼会议室</p>
+                                    <p><strong>最后在线:</strong> 2小时前</p>
+                                    <p><strong>固件版本:</strong> V1.0.5</p>
+                                </div>
+                                <div class="device-actions">
+                                    <button class="btn-control btn-view" onclick="viewDeviceDetails('DEV-2024-0003')">查看</button>
+                                    <button class="btn-control btn-edit" onclick="editDevice('DEV-2024-0003')">编辑</button>
+                                    <button class="btn-control btn-restart" onclick="controlDevice('DEV-2024-0003', 'restart')">重启</button>
+                                    <button class="btn-control btn-ota" onclick="showOtaOptions('DEV-2024-0003')">OTA</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- OTA固件上传区域 -->
+                <section id="ota-management" class="section">
+                    <div class="console-header">
+                        <h2>OTA固件管理</h2>
+                    </div>
+                    
+                    <div class="ota-section">
+                        <form id="ota-form" class="ota-form" enctype="multipart/form-data">
+                            <div class="form-group">
+                                <label for="firmware-file">选择固件文件:</label>
+                                <input type="file" id="firmware-file" name="firmware_file" accept=".bin,.hex,.zip" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="firmware-version">固件版本:</label>
+                                <input type="text" id="firmware-version" name="firmware_version" placeholder="例如: V1.3.0" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>OTA更新选项:</label>
+                                <div class="ota-options">
+                                    <label>
+                                        <input type="radio" name="ota_type" value="notification" checked>
+                                        发送OTA提醒 (设备用户可选择是否更新)
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="ota_type" value="force">
+                                        强制OTA更新 (设备将自动更新)
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="target-device">目标设备:</label>
+                                <select id="target-device" name="target_device" required>
+                                    <option value="all">所有在线设备</option>
+                                    <option value="DEV-2024-0001">智能网关 001</option>
+                                    <option value="DEV-2024-0002">传感器节点 002</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="update-description">更新说明:</label>
+                                <textarea id="update-description" name="update_description" rows="3" placeholder="描述本次更新的内容和改进..."></textarea>
+                            </div>
+                            
+                            <button type="submit" class="btn-ota">
+                                <span class="icon">📤</span> 上传并执行OTA更新
+                            </button>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- 新建设备模态框 -->
+                <div id="add-device-modal" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>新建设备</h3>
+                            <button class="modal-close" onclick="closeAddDeviceModal()">&times;</button>
+                        </div>
+                        <form id="add-device-form">
+                            <div class="form-group">
+                                <label for="device-name">设备名称:</label>
+                                <input type="text" id="device-name" name="device_name" placeholder="输入设备名称" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="device-type">设备类型:</label>
+                                <select id="device-type" name="device_type" required>
+                                    <!-- 设备类型选项将通过JavaScript动态加载 -->
+                                </select>
+                                <div style="margin-top: 5px; font-size: 0.9rem; color: #666;">
+                                    没有合适的设备类型？ <a href="javascript:void(0)" onclick="showAddDeviceTypeModal()">创建新类型</a>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="device-id">设备ID (可选):</label>
+                                <input type="text" id="device-id" name="device_id" placeholder="如不填写将自动生成">
+                            </div>
+                            <div class="form-group">
+                                <label for="device-location">设备位置:</label>
+                                <input type="text" id="device-location" name="device_location" placeholder="输入设备位置信息">
+                            </div>
+                            <div class="form-group">
+                                <label for="device-description">设备描述:</label>
+                                <textarea id="device-description" name="device_description" rows="3" placeholder="输入设备详细描述"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="device-data">设备私有数据 (JSON格式):</label>
+                                <textarea id="device-data" name="device_data" rows="4" placeholder='例如: {"sensors": [{"type": "temperature", "unit": "°C"}], "actuators": [{"type": "relay", "count": 4}]}'></textarea>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" onclick="closeAddDeviceModal()">取消</button>
+                                <button type="submit" class="btn btn-primary">创建设备</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- 设备类型管理模态框 -->
+                <div id="add-device-type-modal" class="modal">
+                    <div class="modal-content" style="width: 600px;">
+                        <div class="modal-header">
+                            <h3>设备类型管理</h3>
+                            <button class="modal-close" onclick="closeAddDeviceTypeModal()">&times;</button>
+                        </div>
+                        
+                        <div class="modal-tabs">
+                            <button class="tab-btn active" onclick="showDeviceTypeTab('list')">类型列表</button>
+                            <button class="tab-btn" onclick="showDeviceTypeTab('create')">新建类型</button>
+                        </div>
+                        
+                        <!-- 设备类型列表 -->
+                        <div id="device-type-list" class="tab-content active">
+                            <div class="table-responsive">
+                                <table class="device-type-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>名称</th>
+                                            <th>图标</th>
+                                            <th>描述</th>
+                                            <th>设备数</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>1</td>
+                                            <td>智能网关</td>
+                                            <td>🏠</td>
+                                            <td>网络连接和数据转发设备</td>
+                                            <td>1</td>
+                                            <td>
+                                                <button class="btn-edit-small" onclick="editDeviceType(1)">编辑</button>
+                                                <button class="btn-delete-small" onclick="deleteDeviceType(1)">删除</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>2</td>
+                                            <td>传感器节点</td>
+                                            <td>📊</td>
+                                            <td>环境数据采集设备</td>
+                                            <td>1</td>
+                                            <td>
+                                                <button class="btn-edit-small" onclick="editDeviceType(2)">编辑</button>
+                                                <button class="btn-delete-small" onclick="deleteDeviceType(2)">删除</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>3</td>
+                                            <td>控制器节点</td>
+                                            <td>⚙️</td>
+                                            <td>执行控制命令的设备</td>
+                                            <td>1</td>
+                                            <td>
+                                                <button class="btn-edit-small" onclick="editDeviceType(3)">编辑</button>
+                                                <button class="btn-delete-small" onclick="deleteDeviceType(3)">删除</button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- 创建设备类型表单 -->
+                        <div id="device-type-create" class="tab-content">
+                            <form id="add-device-type-form">
+                                <div class="form-group">
+                                    <label for="type-name">类型名称:</label>
+                                    <input type="text" id="type-name" name="type_name" placeholder="输入设备类型名称" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="type-icon">类型图标:</label>
+                                    <input type="text" id="type-icon" name="type_icon" placeholder="输入emoji图标" required>
+                                    <div class="emoji-suggestions">
+                                        <span onclick="setTypeIcon('🏠')">🏠</span>
+                                        <span onclick="setTypeIcon('📊')">📊</span>
+                                        <span onclick="setTypeIcon('⚙️')">⚙️</span>
+                                        <span onclick="setTypeIcon('💡')">💡</span>
+                                        <span onclick="setTypeIcon('🔒')">🔒</span>
+                                        <span onclick="setTypeIcon('🔋')">🔋</span>
+                                        <span onclick="setTypeIcon('🌡️')">🌡️</span>
+                                        <span onclick="setTypeIcon('💧')">💧</span>
+                                        <span onclick="setTypeIcon('💨')">💨</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="type-description">类型描述:</label>
+                                    <textarea id="type-description" name="type_description" rows="3" placeholder="输入设备类型描述"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="type-properties">默认属性 (JSON格式):</label>
+                                    <textarea id="type-properties" name="type_properties" rows="4" placeholder='例如: {"capabilities": ["data_collection", "remote_control"], "data_fields": [{"name": "temperature", "type": "number"}]}'></textarea>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" onclick="showDeviceTypeTab('list')">取消</button>
+                                    <button type="submit" class="btn btn-primary">创建类型</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 默认显示当前设备列表
+            showSection('current-devices');
+            
+            // 初始化设备类型下拉列表
+            initDeviceTypeDropdown();
+        });
+
+        // 初始化设备类型下拉列表
+        function initDeviceTypeDropdown() {
+            const deviceTypeSelect = document.getElementById('device-type');
+            
+            // 清空现有选项
+            deviceTypeSelect.innerHTML = '';
+            
+            // 添加默认选项
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = '请选择设备类型';
+            defaultOption.disabled = true;
+            defaultOption.selected = true;
+            deviceTypeSelect.appendChild(defaultOption);
+            
+            // 添加设备类型选项
+            const deviceTypes = [
+                { id: 'gateway', name: '智能网关' },
+                { id: 'sensor', name: '传感器节点' },
+                { id: 'controller', name: '控制器节点' }
+            ];
+            
+            deviceTypes.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type.id;
+                option.textContent = type.name;
+                deviceTypeSelect.appendChild(option);
+            });
+        }
+
+        // 切换设备类型分组显示
+        function toggleDeviceTypeGroup(groupId) {
+            const groupContent = document.getElementById(`${groupId}-group`);
+            const expandIcon = event.currentTarget.querySelector('.expand-icon');
+            
+            if (groupContent.style.display === 'none') {
+                groupContent.style.display = 'grid';
+                expandIcon.textContent = '▼';
+            } else {
+                groupContent.style.display = 'none';
+                expandIcon.textContent = '▶';
+            }
+        }
+
+        // 显示设备类型管理模态框
+        function showAddDeviceTypeModal() {
+            const modal = document.getElementById('add-device-type-modal');
+            modal.classList.add('active');
+            showDeviceTypeTab('list');
+        }
+
+        // 显示新建设备模态框
+        function showAddDeviceModal() {
+            const modal = document.getElementById('add-device-modal');
+            modal.classList.add('active');
+            
+            // 初始化表单
+            document.getElementById('add-device-form').reset();
+        }
+        
+        // 关闭新建设备模态框
+        function closeAddDeviceModal() {
+            const modal = document.getElementById('add-device-modal');
+            modal.classList.remove('active');
+        }
+        
+        // 关闭设备类型管理模态框
+        function closeAddDeviceTypeModal() {
+            const modal = document.getElementById('add-device-type-modal');
+            modal.classList.remove('active');
+            
+            // 重新初始化设备类型下拉列表，确保新创建的类型显示
+            initDeviceTypeDropdown();
+        }
+
+        // 显示设备类型标签页
+        function showDeviceTypeTab(tabId) {
+            // 隐藏所有标签页内容
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 显示选中的标签页
+            document.getElementById(`device-type-${tabId}`).classList.add('active');
+            
+            // 更新标签按钮状态
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            tabButtons.forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // 激活当前标签按钮
+            event.currentTarget.classList.add('active');
+        }
+
+        // 设置类型图标
+        function setTypeIcon(icon) {
+            document.getElementById('type-icon').value = icon;
+        }
+
+        // 查看设备详情
+        function viewDeviceDetails(deviceId) {
+            // 实际实现时，这里应该调用API获取设备详情
+            console.log(`查看设备 ${deviceId} 详情`);
+            showNotification(`已加载设备 ${deviceId} 详情`, 'info');
+        }
+
+        // 编辑设备
+        function editDevice(deviceId) {
+            // 实际实现时，这里应该调用API获取设备信息并填充表单
+            console.log(`编辑设备 ${deviceId}`);
+            showAddDeviceModal();
+            document.getElementById('device-name').value = `设备 ${deviceId}`;
+            showNotification(`正在编辑设备 ${deviceId}`, 'info');
+        }
+
+        // 编辑设备类型
+        function editDeviceType(typeId) {
+            // 切换到创建标签页
+            showDeviceTypeTab('create');
+            
+            // 实际实现时，这里应该调用API获取设备类型信息并填充表单
+            console.log(`编辑设备类型 ${typeId}`);
+            
+            // 根据类型ID设置表单值示例
+            if (typeId === 1) {
+                document.getElementById('type-name').value = '智能网关';
+                document.getElementById('type-icon').value = '🏠';
+                document.getElementById('type-description').value = '网络连接和数据转发设备';
+            } else if (typeId === 2) {
+                document.getElementById('type-name').value = '传感器节点';
+                document.getElementById('type-icon').value = '📊';
+                document.getElementById('type-description').value = '环境数据采集设备';
+            } else if (typeId === 3) {
+                document.getElementById('type-name').value = '控制器节点';
+                document.getElementById('type-icon').value = '⚙️';
+                document.getElementById('type-description').value = '执行控制命令的设备';
+            }
+            
+            showNotification(`正在编辑设备类型 ${typeId}`, 'info');
+        }
+
+        // 删除设备类型
+        function deleteDeviceType(typeId) {
+            // 实际实现时，这里应该调用API删除设备类型
+            console.log(`删除设备类型 ${typeId}`);
+            
+            // 显示确认提示
+            if (confirm('确定要删除此设备类型吗？这将影响使用该类型的所有设备。')) {
+                showNotification(`设备类型 ${typeId} 已删除`, 'success');
+                // 这里应该重新加载设备类型列表
+            }
+        }
+
+        // 新建设备类型表单提交处理
+        document.getElementById('add-device-type-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const typeName = document.getElementById('type-name').value;
+            const typeIcon = document.getElementById('type-icon').value;
+            const typeDescription = document.getElementById('type-description').value;
+            const typeProperties = document.getElementById('type-properties').value;
+            
+            // 表单验证
+            if (!typeName) {
+                showNotification('请输入设备类型名称', 'error');
+                return;
+            }
+            
+            // 获取提交按钮并修改为加载状态
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalContent = submitButton.innerHTML;
+            submitButton.innerHTML = '<span class="loading"></span> 创建中...';
+            submitButton.disabled = true;
+            
+            try {
+                // 构建类型数据
+                const typeData = {
+                    name: typeName,
+                    icon: typeIcon,
+                    description: typeDescription,
+                    properties: typeProperties ? JSON.parse(typeProperties) : {}
+                };
+                
+                // 调用API创建新设备类型
+                const response = await fetch('/api/v1/device-type', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(typeData)
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.detail || `创建设备类型失败! status: ${response.status}`);
+                }
+                
+                const newDeviceType = await response.json();
+                console.log('创建新设备类型成功:', newDeviceType);
+                
+                // 切换到类型列表
+                showDeviceTypeTab('list');
+                
+                // 显示成功通知
+                showNotification(`设备类型 "${typeName}" 已成功创建`, 'success');
+                
+                // 重置表单
+                this.reset();
+                
+                // 刷新设备列表，确保新设备类型正确显示
+                await refreshDeviceList();
+                
+            } catch (error) {
+                console.error('创建设备类型失败:', error);
+                showNotification(error.message || '创建设备类型失败', 'error');
+            } finally {
+                // 恢复按钮状态
+                submitButton.innerHTML = originalContent;
+                submitButton.disabled = false;
+            }
+        });
+
+        // 刷新设备列表
+        async function refreshDeviceList() {
+            // 添加加载动画
+            let refreshButton = null;
+            if (event && event.currentTarget) {
+                refreshButton = event.currentTarget;
+                const originalContent = refreshButton.innerHTML;
+                refreshButton.innerHTML = '<span class="loading"></span> 刷新中...';
+                refreshButton.disabled = true;
+            }
+            
+            try {
+                // 获取设备类型列表
+                const deviceTypesResponse = await fetch('/api/v1/device-type');
+                if (!deviceTypesResponse.ok) {
+                    throw new Error(`获取设备类型失败! status: ${deviceTypesResponse.status}`);
+                }
+                const deviceTypes = await deviceTypesResponse.json();
+                
+                // 获取设备列表
+                const devicesResponse = await fetch('/api/v1/device');
+                if (!devicesResponse.ok) {
+                    throw new Error(`获取设备列表失败! status: ${devicesResponse.status}`);
+                }
+                const devices = await devicesResponse.json();
+                
+                const deviceList = document.getElementById('device-list');
+                deviceList.innerHTML = '';
+                
+                // 更新设备统计
+                updateDeviceStats(devices);
+                
+                // 如果没有设备
+                if (devices.length === 0) {
+                    deviceList.innerHTML = '<p class="no-devices">暂无设备</p>';
+                    return;
+                }
+                
+                // 按设备类型分组设备
+                const devicesByType = {};
+                devices.forEach(device => {
+                    if (!devicesByType[device.device_type_id]) {
+                        devicesByType[device.device_type_id] = [];
+                    }
+                    devicesByType[device.device_type_id].push(device);
+                });
+                
+                // 创建设备类型分组
+                deviceTypes.forEach(deviceType => {
+                    const devicesInType = devicesByType[deviceType.id] || [];
+                    if (devicesInType.length > 0) {
+                        // 创建设备类型分组容器
+                        const typeGroup = document.createElement('div');
+                        typeGroup.className = 'device-type-group';
+                        
+                        // 创建设备类型标题
+                        const typeHeader = document.createElement('div');
+                        typeHeader.className = 'device-type-header';
+                        typeHeader.innerHTML = `
+                            <h3>${deviceType.name}</h3>
+                            <span class="device-count">${devicesInType.length}台设备</span>
+                        `;
+                        
+                        // 创建设备类型内容区域
+                        const typeContent = document.createElement('div');
+                        typeContent.className = 'device-type-content';
+                        
+                        // 创建设备网格
+                        const deviceGrid = document.createElement('div');
+                        deviceGrid.className = 'device-grid';
+                        
+                        // 添加设备卡片
+                        devicesInType.forEach(device => {
+                            const deviceCard = createDeviceCard(device);
+                            deviceGrid.appendChild(deviceCard);
+                        });
+                        
+                        // 组合元素
+                        typeContent.appendChild(deviceGrid);
+                        typeGroup.appendChild(typeHeader);
+                        typeGroup.appendChild(typeContent);
+                        deviceList.appendChild(typeGroup);
+                    }
+                });
+                
+                // 处理没有类型的设备（如果有）
+                const untypedDevices = devices.filter(device => !device.device_type_id);
+                if (untypedDevices.length > 0) {
+                    // 创建未分类分组容器
+                    const untypedGroup = document.createElement('div');
+                    untypedGroup.className = 'device-type-group';
+                    
+                    // 创建未分类标题
+                    const untypedHeader = document.createElement('div');
+                    untypedHeader.className = 'device-type-header';
+                    untypedHeader.innerHTML = `
+                        <h3>未分类设备</h3>
+                        <span class="device-count">${untypedDevices.length}台设备</span>
+                    `;
+                    
+                    // 创建未分类内容区域
+                    const untypedContent = document.createElement('div');
+                    untypedContent.className = 'device-type-content';
+                    
+                    // 创建设备网格
+                    const deviceGrid = document.createElement('div');
+                    deviceGrid.className = 'device-grid';
+                    
+                    // 添加设备卡片
+                    untypedDevices.forEach(device => {
+                        const deviceCard = createDeviceCard(device);
+                        deviceGrid.appendChild(deviceCard);
+                    });
+                    
+                    // 组合元素
+                    untypedContent.appendChild(deviceGrid);
+                    untypedGroup.appendChild(untypedHeader);
+                    untypedGroup.appendChild(untypedContent);
+                    deviceList.appendChild(untypedGroup);
+                }
+                
+                // 显示成功提示
+                showNotification('设备列表已刷新', 'success');
+                
+            } catch (error) {
+                console.error('刷新设备列表失败:', error);
+                showNotification('刷新设备列表失败', 'error');
+            } finally {
+                // 恢复按钮状态
+                if (refreshButton) {
+                    refreshButton.innerHTML = '<span class="icon">🔄</span> 刷新';
+                    refreshButton.disabled = false;
+                }
+            }
+        }
+
+        // 控制设备
+        function controlDevice(deviceId, action) {
+            // 实际实现时，这里应该调用API向设备发送控制命令
+            console.log(`对设备 ${deviceId} 执行 ${action} 操作`);
+            
+            // 模拟操作反馈
+            if (action === 'restart') {
+                showNotification(`设备 ${deviceId} 正在重启...`, 'info');
+            } else if (action === 'reset') {
+                showNotification(`设备 ${deviceId} 正在重置...`, 'warning');
+            }
+        }
+
+        // 显示OTA选项
+        function showOtaOptions(deviceId) {
+            // 切换到OTA管理区域
+            showSection('ota-management');
+            
+            // 设置目标设备
+            document.getElementById('target-device').value = deviceId;
+            
+            // 聚焦到文件选择框
+            document.getElementById('firmware-file').focus();
+            
+            // 显示通知
+            showNotification(`已选择设备 ${deviceId} 进行OTA更新`, 'info');
+        }
+
+        // OTA表单提交处理
+        document.getElementById('ota-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const firmwareFile = document.getElementById('firmware-file').files[0];
+            const firmwareVersion = document.getElementById('firmware-version').value;
+            const otaType = document.querySelector('input[name="ota_type"]:checked').value;
+            const targetDevice = document.getElementById('target-device').value;
+            const updateDescription = document.getElementById('update-description').value;
+            
+            if (!firmwareFile) {
+                showNotification('请选择固件文件', 'error');
+                return;
+            }
+            
+            // 获取提交按钮并修改为加载状态
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalContent = submitButton.innerHTML;
+            submitButton.innerHTML = '<span class="loading"></span> 上传中...';
+            submitButton.disabled = true;
+            
+            // 构建表单数据
+            const formData = new FormData();
+            formData.append('firmware_file', firmwareFile);
+            formData.append('firmware_version', firmwareVersion);
+            formData.append('ota_type', otaType);
+            formData.append('target_device', targetDevice);
+            formData.append('update_description', updateDescription);
+            
+            // 实际实现时，这里应该调用API上传固件并执行OTA更新
+            console.log(`上传固件 ${firmwareVersion} 到 ${targetDevice === 'all' ? '所有在线设备' : targetDevice}`);
+            
+            // 模拟上传过程
+            setTimeout(() => {
+                // 恢复按钮状态
+                submitButton.innerHTML = originalContent;
+                submitButton.disabled = false;
+                
+                // 显示成功通知
+                showNotification('OTA更新任务已创建，设备将根据选择的更新方式进行更新', 'success');
+                
+                // 重置表单
+                this.reset();
+            }, 2500);
+        });
+
+        // 新建设备表单提交处理
+        document.getElementById('add-device-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const deviceName = document.getElementById('device-name').value;
+            const deviceTypeId = document.getElementById('device-type').value;
+            const deviceId = document.getElementById('device-id').value;
+            const deviceLocation = document.getElementById('device-location').value;
+            const deviceDescription = document.getElementById('device-description').value;
+            const deviceData = document.getElementById('device-data').value;
+            
+            // 表单验证
+            if (!deviceName) {
+                showNotification('请输入设备名称', 'error');
+                return;
+            }
+            
+            if (!deviceTypeId) {
+                showNotification('请选择设备类型', 'error');
+                return;
+            }
+            
+            if (!deviceId) {
+                showNotification('请输入设备ID', 'error');
+                return;
+            }
+            
+            // 获取提交按钮并修改为加载状态
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalContent = submitButton.innerHTML;
+            submitButton.innerHTML = '<span class="loading"></span> 创建中...';
+            submitButton.disabled = true;
+            
+            try {
+                // 构建设备数据
+                const deviceDataObj = {
+                    name: deviceName,
+                    device_type_id: parseInt(deviceTypeId),
+                    device_id: deviceId,
+                    location: deviceLocation,
+                    description: deviceDescription,
+                    private_data: deviceData ? JSON.parse(deviceData) : {}
+                };
+                
+                // 调用API创建新设备
+                const response = await fetch('/api/v1/device', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(deviceDataObj)
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.detail || `创建设备失败! status: ${response.status}`);
+                }
+                
+                const newDevice = await response.json();
+                console.log('创建新设备成功:', newDevice);
+                
+                // 关闭模态框
+                closeAddDeviceModal();
+                
+                // 显示成功通知
+                showNotification(`设备 "${deviceName}" 已成功创建`, 'success');
+                
+                // 刷新设备列表
+                await refreshDeviceList();
+                
+            } catch (error) {
+                console.error('创建设备失败:', error);
+                showNotification(error.message || '创建设备失败', 'error');
+            } finally {
+                // 恢复按钮状态
+                submitButton.innerHTML = originalContent;
+                submitButton.disabled = false;
+            }
+        });
+
+        // 显示标签页
+        function showSection(sectionId) {
+            // 隐藏所有部分
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // 显示选定部分
+            const selectedSection = document.getElementById(sectionId);
+            selectedSection.style.display = 'block';
+            
+            // 更新侧边栏活动状态
+            const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
+            sidebarLinks.forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // 设置当前链接为活动状态
+            const activeLink = document.querySelector(`.sidebar-nav a[onclick="showSection('${sectionId}')"]`);
+            if (activeLink) {
+                activeLink.classList.add('active');
+            }
+            
+            // 对于新建设备部分，直接打开模态框
+            if (sectionId === 'add-device') {
+                showAddDeviceModal();
+                // 返回到当前设备列表
+                setTimeout(() => {
+                    showSection('current-devices');
+                }, 100);
+            }
+        }
+        
+        // 显示通知消息
+        function showNotification(message, type = 'info') {
+            // 创建通知元素
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 6px;
+                color: white;
+                font-weight: 500;
+                z-index: 10000;
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            `;
+            
+            // 根据类型设置背景色
+            if (type === 'success') {
+                notification.style.backgroundColor = '#4caf50';
+            } else if (type === 'error') {
+                notification.style.backgroundColor = '#f44336';
+            } else if (type === 'warning') {
+                notification.style.backgroundColor = '#ff9800';
+            } else {
+                notification.style.backgroundColor = '#2196f3';
+            }
+            
+            // 添加到页面
+            document.body.appendChild(notification);
+            
+            // 显示通知
+            setTimeout(() => {
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // 自动关闭
+            setTimeout(() => {
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
+</body>
+</html>
